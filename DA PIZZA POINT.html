@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Da Pizza Point</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@300;400;500&display=swap');
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --red:    #c0392b;
+  --red-lt: #e05444;
+  --beige:  #f5ede0;
+  --beige2: #ede0cc;
+  --sand:   #d4b896;
+  --white:  #ffffff;
+  --text:   #2c1a14;
+  --muted:  #9e7a67;
+  --card-bg:rgba(255,255,255,0.72);
+}
+
+html{scroll-behavior:smooth;}
+
+body{
+  background:var(--white);
+  font-family:'Inter',sans-serif;
+  color:var(--text);
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── CURSOR ── */
+#cur {position:fixed;width:9px;height:9px;background:var(--red);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform .15s;}
+#curR{position:fixed;width:32px;height:32px;border:1.5px solid rgba(192,57,43,0.3);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);}
+
+/* ── NAVBAR ── */
+nav{
+  position:fixed;top:0;left:0;right:0;height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;
+  background:rgba(255,255,255,0.82);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(192,57,43,0.08);
+  z-index:500;
+}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:var(--red);letter-spacing:.04em;}
+.nav-links{display:flex;gap:2rem;list-style:none;font-size:.72rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.nav-links a{color:inherit;text-decoration:none;cursor:none;transition:color .2s;}
+.nav-links a:hover{color:var(--red);}
+
+/* ── PROGRESS BAR ── */
+#prog{position:fixed;top:64px;left:0;height:2px;width:0%;background:linear-gradient(90deg,var(--red),var(--sand));z-index:500;transition:width .1s;}
+
+/* ── SECTIONS ── */
+section{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:100px 48px 80px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Section gradients */
+#hero   {background:linear-gradient(155deg,#ffffff 0%,#f5ede0 55%,#ede0cc 100%);}
+#story  {background:linear-gradient(145deg,#f5ede0 0%,#ffffff 60%,#fdf6ee 100%);}
+#menu   {background:linear-gradient(150deg,#ffffff 0%,#f5ede0 45%,#fbeee4 100%);}
+#reviews{background:linear-gradient(140deg,#fdf6ee 0%,#f5ede0 55%,#ffffff 100%);}
+#visit  {background:linear-gradient(145deg,#f5ede0 0%,#fdf6ee 50%,#ede0cc 100%);}
+
+/* ── DECO RINGS ── */
+.ring{position:absolute;border-radius:50%;border:1.5px solid rgba(192,57,43,0.1);pointer-events:none;}
+.blob{position:absolute;border-radius:50%;background:rgba(192,57,43,0.07);pointer-events:none;filter:blur(50px);}
+
+/* ── PIZZA 3D ── */
+#pizza-stage{
+  position:fixed;
+  right:6vw;
+  top:50%;
+  transform:translateY(-50%);
+  width:260px;height:260px;
+  z-index:100;
+  perspective:800px;
+  pointer-events:none;
+  transition:opacity .4s;
+}
+#pizza-3d{
+  width:260px;height:260px;
+  position:relative;
+  transform-style:preserve-3d;
+  /* rotateX driven by JS, rotateY auto-spin combined via JS */
+}
+
+/* Pizza faces */
+.pz-face{
+  position:absolute;
+  border-radius:50%;
+  transform-style:preserve-3d;
+}
+/* Top face – the pizza surface */
+.pz-top{
+  width:260px;height:260px;
+  background:
+    radial-gradient(circle at 50% 50%, #f5ede0 0%, #e8d5b8 60%, #c4954a 80%, #9b6c2a 100%);
+  border:3px solid #9b6c2a;
+  top:0;left:0;
+  transform:translateZ(18px);
+  overflow:hidden;
+}
+/* Sauce layer */
+.pz-top::before{
+  content:'';position:absolute;
+  width:200px;height:200px;top:27px;left:27px;
+  border-radius:50%;
+  background:radial-gradient(circle,#c0392b 0%,#922b21 80%,transparent 100%);
+  opacity:.85;
+}
+/* Cheese */
+.pz-top::after{
+  content:'';position:absolute;
+  width:168px;height:168px;top:43px;left:43px;
+  border-radius:50%;
+  background:radial-gradient(circle,#ffd97d 0%,#f4b942 70%,transparent 100%);
+  opacity:.9;
+}
+/* Bottom crust face */
+.pz-bot{
+  width:260px;height:260px;
+  background:radial-gradient(circle,#b8864a 0%,#7a4f1d 100%);
+  border:3px solid #7a4f1d;
+  top:0;left:0;
+  transform:translateZ(-18px);
+}
+/* Crust side */
+.pz-side{
+  position:absolute;
+  border-radius:50%;
+  top:0;left:0;
+}
+
+/* Toppings (pepperoni) */
+.pep{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(circle,#922b21 0%,#641e16 100%);
+  border:1px solid #4a1208;
+  z-index:2;
+}
+/* Basil */
+.bas{
+  position:absolute;
+  width:18px;height:10px;border-radius:50%;
+  background:#2d6a4f;
+  z-index:2;transform:rotate(var(--r,0deg));
+}
+/* Slice lines */
+.slice{
+  position:absolute;top:50%;left:50%;
+  height:1.5px;
+  background:rgba(154,107,42,0.4);
+  transform-origin:left center;
+  z-index:3;
+}
+
+/* ── SECTION INNER LAYOUT ── */
+.sec-inner{
+  max-width:1100px;width:100%;margin:0 auto;
+  display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;
+}
+.sec-inner.reverse{direction:rtl;}
+.sec-inner.reverse>*{direction:ltr;}
+.sec-inner.center{grid-template-columns:1fr;text-align:center;max-width:680px;gap:0;}
+
+/* ── TYPOGRAPHY ── */
+.eyebrow{font-size:.62rem;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(3.2rem,7vw,6.5rem);font-weight:900;line-height:.95;letter-spacing:-.02em;color:var(--red);margin-bottom:.5rem;}
+.h1-italic{font-family:'Playfair Display',serif;font-size:clamp(1.2rem,2.5vw,2rem);font-weight:400;font-style:italic;color:var(--text);opacity:.55;margin-bottom:1.8rem;}
+h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3.4rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;color:var(--text);margin-bottom:.7rem;}
+h2 em{color:var(--red);font-style:normal;}
+p.body{font-size:clamp(.88rem,1.3vw,.98rem);color:var(--muted);line-height:1.85;max-width:400px;}
+.divider{width:36px;height:2px;background:var(--red);opacity:.45;border-radius:2px;margin:.9rem 0 1.3rem;}
+.center .divider{margin:.9rem auto 1.3rem;}
+.center p.body{max-width:520px;margin:0 auto;}
+
+/* ── BUTTONS ── */
+.btns{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.8rem;}
+.btn{display:inline-block;padding:.72rem 1.85rem;border-radius:4px;font-size:.7rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;cursor:none;transition:all .25s;text-decoration:none;}
+.btn-solid{background:var(--red);color:#fff;border:1.5px solid var(--red);}
+.btn-solid:hover{background:var(--red-lt);border-color:var(--red-lt);}
+.btn-ghost{background:transparent;color:var(--red);border:1.5px solid var(--red);}
+.btn-ghost:hover{background:rgba(192,57,43,0.07);}
+
+/* ── PILL TAG ── */
+.pill{display:inline-flex;align-items:center;gap:7px;padding:.38rem .95rem;border:1px solid rgba(192,57,43,0.2);border-radius:100px;font-size:.6rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:1.2rem;}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:pulse 1.8s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ── STATS ── */
+.stats{display:flex;gap:2rem;flex-wrap:wrap;margin-top:2rem;}
+.stat-n{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:900;color:var(--red);line-height:1;}
+.stat-l{font-size:.58rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+
+/* ── MENU CARDS ── */
+.menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;margin-top:2rem;}
+.mc{padding:1.5rem 1.2rem;border:1px solid rgba(192,57,43,0.12);border-radius:12px;background:var(--card-bg);backdrop-filter:blur(10px);transition:transform .3s,box-shadow .3s;}
+.mc:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(192,57,43,0.1);}
+.mc-icon{font-size:2rem;margin-bottom:.6rem;line-height:1;}
+.mc-name{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--text);}
+.mc-desc{font-size:.68rem;color:var(--muted);line-height:1.6;margin-top:.3rem;}
+.mc-price{font-size:.8rem;font-weight:500;color:var(--red);margin-top:.7rem;}
+
+/* ── REVIEW CARDS ── */
+.review-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2rem;}
+.rv{padding:1.4rem 1.5rem;border:1px solid rgba(192,57,43,0.1);border-radius:12px;background:var(--card-bg);backdrop-filter:blur(10px);}
+.rv-stars{color:var(--red);font-size:.8rem;letter-spacing:2px;margin-bottom:.5rem;opacity:.8;}
+.rv-text{font-size:.85rem;color:var(--text);line-height:1.72;font-style:italic;opacity:.8;}
+.rv-name{font-size:.58rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:.7rem;}
+
+/* ── RATING BADGE ── */
+.rating-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:1.5rem;}
+.r-badge{display:flex;align-items:center;gap:.55rem;padding:.48rem 1rem;border:1px solid rgba(192,57,43,0.15);border-radius:6px;background:rgba(255,255,255,0.6);}
+.rb-stars{color:var(--red);font-size:.85rem;}
+.rb-score{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;color:var(--red);}
+.rb-src{font-size:.58rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.rb-price{font-size:.63rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
+
+/* ── CONTACT CARDS ── */
+.contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem;}
+.ci{padding:1.1rem 1.3rem;border:1px solid rgba(192,57,43,0.12);border-radius:10px;background:var(--card-bg);backdrop-filter:blur(10px);}
+.ci-label{font-size:.58rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
+.ci-val{font-size:.9rem;color:var(--text);line-height:1.55;}
+.ci-val a{color:var(--red);text-decoration:none;}
+
+/* ── IMAGE PLACEHOLDER (pizza scene side) ── */
+.pizza-side{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;min-height:320px;
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease, transform .7s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--text);color:rgba(255,255,255,0.45);
+  text-align:center;padding:1.5rem;font-size:.68rem;letter-spacing:.1em;
+}
+footer span{color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cur"></div>
+<div id="curR"></div>
+
+<!-- PROGRESS -->
+<div id="prog"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Da Pizza Point</div>
+  <ul class="nav-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="#story">Story</a></li>
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="#visit">Visit</a></li>
+  </ul>
+</nav>
+
+<!-- FIXED 3D PIZZA -->
+<div id="pizza-stage">
+  <div id="pizza-3d">
+    <!-- Bottom -->
+    <div class="pz-face pz-bot"></div>
+    <!-- Top surface -->
+    <div class="pz-face pz-top">
+      <!-- Pepperoni -->
+      <div class="pep" style="width:32px;height:32px;top:52px;left:104px;"></div>
+      <div class="pep" style="width:26px;height:26px;top:90px;left:48px;"></div>
+      <div class="pep" style="width:28px;height:28px;top:88px;left:162px;"></div>
+      <div class="pep" style="width:22px;height:22px;top:148px;left:80px;"></div>
+      <div class="pep" style="width:24px;height:24px;top:146px;left:140px;"></div>
+      <div class="pep" style="width:20px;height:20px;top:62px;left:164px;"></div>
+      <!-- Basil -->
+      <div class="bas" style="top:74px;left:78px;--r:-20deg;"></div>
+      <div class="bas" style="top:128px;left:110px;--r:30deg;"></div>
+      <div class="bas" style="top:106px;left:158px;--r:-40deg;"></div>
+      <!-- Slice lines -->
+      <div class="slice" style="width:130px;transform:rotate(0deg);"></div>
+      <div class="slice" style="width:130px;transform:rotate(60deg);"></div>
+      <div class="slice" style="width:130px;transform:rotate(120deg);"></div>
+      <div class="slice" style="width:130px;transform:rotate(180deg);"></div>
+      <div class="slice" style="width:130px;transform:rotate(240deg);"></div>
+      <div class="slice" style="width:130px;transform:rotate(300deg);"></div>
+    </div>
+    <!-- Crust ring sides -->
+    <div id="crust-sides"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     HERO
+══════════════════════════ -->
+<section id="hero">
+  <div class="ring" style="width:500px;height:500px;top:-200px;right:-200px;"></div>
+  <div class="ring" style="width:260px;height:260px;bottom:-80px;left:-60px;"></div>
+  <div class="blob" style="width:350px;height:350px;top:-80px;right:-60px;"></div>
+
+  <div class="sec-inner">
+    <div class="reveal">
+      <div class="pill"><div class="pill-dot"></div>Kasganj, UP · Open from 10 AM</div>
+      <h1>Da Pizza<br>Point</h1>
+      <div class="h1-italic">Crafted in fire. Served with soul.</div>
+      <div class="btns">
+        <a class="btn btn-solid" href="https://www.zomato.com/kasganj/da-pizza-point-kasganj-locality/order" target="_blank">Order on Zomato</a>
+        <a class="btn btn-ghost" href="tel:08979984736">Call Now</a>
+      </div>
+    </div>
+    <!-- right side is the fixed pizza (ghost spacer) -->
+    <div class="pizza-side"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════
+     STORY
+══════════════════════════ -->
+<section id="story">
+  <div class="ring" style="width:420px;height:420px;bottom:-160px;left:-140px;"></div>
+  <div class="blob" style="width:300px;height:300px;bottom:-60px;right:10%;"></div>
+
+  <div class="sec-inner reverse">
+    <div class="pizza-side"></div>
+    <div class="reveal">
+      <div class="eyebrow">Our Story</div>
+      <h2>Born from a<br><em>Love of Pizza</em></h2>
+      <div class="divider"></div>
+      <p class="body">At Da Pizza Point, every pizza starts with hand-stretched dough, real tomato sauce, and toppings that go straight from fresh to flame. No shortcuts, no heat lamps — just honest pizza, made to order, every single time.</p>
+      <div class="stats">
+        <div><div class="stat-n">12+</div><div class="stat-l">Signature Pizzas</div></div>
+        <div><div class="stat-n">4★</div><div class="stat-l">Zomato · 495 Votes</div></div>
+        <div><div class="stat-n">₹400</div><div class="stat-l">Max per person</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════
+     MENU
+══════════════════════════ -->
+<section id="menu">
+  <div class="ring" style="width:380px;height:380px;top:-120px;right:-120px;"></div>
+  <div class="blob" style="width:280px;height:280px;top:-40px;left:5%;"></div>
+
+  <div class="sec-inner center reveal">
+    <div>
+      <div class="eyebrow">The Menu</div>
+      <h2>Pick Your <em>Perfect Slice</em></h2>
+      <div class="divider"></div>
+      <p class="body">Fresh every day. Every topping chosen for flavour, every base stretched by hand.</p>
+      <div class="menu-grid">
+        <div class="mc"><div class="mc-icon">🍕</div><div class="mc-name">Margherita</div><div class="mc-desc">San Marzano, fior di latte, fresh basil</div><div class="mc-price">₹ 299</div></div>
+        <div class="mc"><div class="mc-icon">🌶️</div><div class="mc-name">Diavola</div><div class="mc-desc">Spicy salami, chili oil, smoked mozzarella</div><div class="mc-price">₹ 379</div></div>
+        <div class="mc"><div class="mc-icon">🧄</div><div class="mc-name">Garlic Blaze</div><div class="mc-desc">Roasted garlic, white sauce, herb oil</div><div class="mc-price">₹ 329</div></div>
+        <div class="mc"><div class="mc-icon">🫑</div><div class="mc-name">Garden Fire</div><div class="mc-desc">Mixed peppers, onion, olives, mozzarella</div><div class="mc-price">₹ 319</div></div>
+        <div class="mc"><div class="mc-icon">🍗</div><div class="mc-name">BBQ Chicken</div><div class="mc-desc">Grilled chicken, BBQ drizzle, red onion</div><div class="mc-price">₹ 369</div></div>
+        <div class="mc"><div class="mc-icon">🧀</div><div class="mc-name">Four Cheese</div><div class="mc-desc">Mozzarella, cheddar, gouda, parmesan</div><div class="mc-price">₹ 389</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════
+     REVIEWS
+══════════════════════════ -->
+<section id="reviews">
+  <div class="ring" style="width:450px;height:450px;bottom:-180px;right:-160px;"></div>
+  <div class="blob" style="width:320px;height:320px;top:-60px;left:0;"></div>
+
+  <div class="sec-inner center reveal">
+    <div>
+      <div class="eyebrow">What People Say</div>
+      <h2>Real Love, <em>Real Reviews</em></h2>
+      <div class="divider"></div>
+      <div class="review-grid">
+        <div class="rv"><div class="rv-stars">★★★★★</div><div class="rv-text">"Best pizza I've had in Kasganj — the crust has that perfect char and chew. You can taste the care in every bite."</div><div class="rv-name">— Riya M. · Google Review</div></div>
+        <div class="rv"><div class="rv-stars">★★★★★</div><div class="rv-text">"Diavola hit different. The spice, the pull on the cheese — I'm coming back every weekend."</div><div class="rv-name">— Arjun K. · Zomato Review</div></div>
+        <div class="rv"><div class="rv-stars">★★★★☆</div><div class="rv-text">"Garlic Blaze is underrated. The white sauce base with herb oil is something special."</div><div class="rv-name">— Priya S. · Google Review</div></div>
+        <div class="rv"><div class="rv-stars">★★★★★</div><div class="rv-text">"Great value, great taste. The Four Cheese is pure comfort. Staff is warm and fast."</div><div class="rv-name">— Rohit T. · Zomato Review</div></div>
+      </div>
+      <div class="rating-row" style="justify-content:center;">
+        <div class="r-badge"><span class="rb-stars">★★★★</span><span class="rb-score">4 / 5</span><span class="rb-src">Zomato · 495 votes</span></div>
+        <span class="rb-price">₹1 – ₹400 per person</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════
+     VISIT
+══════════════════════════ -->
+<section id="visit">
+  <div class="ring" style="width:400px;height:400px;top:-140px;left:-120px;"></div>
+  <div class="blob" style="width:280px;height:280px;bottom:-60px;right:8%;"></div>
+
+  <div class="sec-inner center reveal">
+    <div>
+      <div class="eyebrow">Find Us</div>
+      <h2>Come for the <em>Slice</em></h2>
+      <div class="divider"></div>
+      <p class="body">Walk in, call ahead, or order online. We're here every day from 10 AM, ready to fire up your order.</p>
+      <div class="contact-grid">
+        <div class="ci"><div class="ci-label">Address</div><div class="ci-val">Arya Nagar,<br>Kasganj, UP 207123</div></div>
+        <div class="ci"><div class="ci-label">Hours</div><div class="ci-val">Open from 10 AM<br>Every Day</div></div>
+        <div class="ci"><div class="ci-label">Phone</div><div class="ci-val"><a href="tel:08979984736">089799 84736</a></div></div>
+      </div>
+      <div class="btns" style="justify-content:center;margin-top:2rem;">
+        <a class="btn btn-solid" href="tel:08979984736">Call Now</a>
+        <a class="btn btn-ghost" href="https://www.zomato.com/kasganj/da-pizza-point-kasganj-locality/order" target="_blank">Order on Zomato →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>© 2025 <span>Da Pizza Point</span> · Arya Nagar, Kasganj, UP 207123 · 089799 84736</footer>
+
+<script>
+/* ── CURSOR ── */
+const cur=document.getElementById('cur'),curR=document.getElementById('curR');
+let mx=window.innerWidth/2,my=window.innerHeight/2,rx=mx,ry=my;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function loop(){rx+=(mx-rx)*.13;ry+=(my-ry)*.13;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(loop);})();
+
+/* ── PROGRESS BAR ── */
+const prog=document.getElementById('prog');
+window.addEventListener('scroll',()=>{
+  const s=document.documentElement.scrollTop;
+  const h=document.documentElement.scrollHeight-window.innerHeight;
+  prog.style.width=(s/h*100)+'%';
+},{ passive:true });
+
+/* ── BUILD CRUST SIDE SEGMENTS ── */
+(function(){
+  const parent=document.getElementById('crust-sides');
+  const total=36,r=130,thick=36;
+  for(let i=0;i<total;i++){
+    const angle=(i/total)*Math.PI*2;
+    const nx=Math.cos(angle),ny=Math.sin(angle);
+    const seg=document.createElement('div');
+    seg.style.cssText=`
+      position:absolute;
+      width:${thick}px;height:${thick}px;
+      border-radius:50%;
+      left:${130+nx*r-thick/2}px;
+      top:${130+ny*r-thick/2}px;
+      background:radial-gradient(circle,#d4954a 0%,#9b6c2a 100%);
+      transform:translateZ(${i%2===0?'-2px':'2px'}) scaleX(${Math.abs(Math.cos(angle))>.7?.35:.9});
+      opacity:${.7+.3*Math.abs(ny)};
+    `;
+    parent.appendChild(seg);
+  }
+})();
+
+/* ── 3D PIZZA SCROLL ANIMATION ── */
+const stage=document.getElementById('pizza-stage');
+const pizza=document.getElementById('pizza-3d');
+
+let autoAngle=0;
+let lastScroll=0;
+let scrollVel=0;
+let tiltX=20; // base tilt
+let targetTiltX=20;
+let autoSpinSpeed=0.4;
+
+function updatePizza(){
+  const scrollY=window.scrollY;
+  const dScroll=scrollY-lastScroll;
+  scrollVel=dScroll;
+  lastScroll=scrollY;
+
+  // Scroll → extra tilt and spin speed
+  const extraTilt=Math.min(Math.abs(dScroll)*1.5,40)*Math.sign(dScroll);
+  targetTiltX=20+extraTilt;
+  tiltX+=(targetTiltX-tiltX)*0.08;
+
+  // Auto spin + scroll bonus spin
+  const spinBoost=scrollVel*0.6;
+  autoAngle+=autoSpinSpeed+spinBoost;
+
+  pizza.style.transform=`rotateX(${tiltX}deg) rotateY(${autoAngle}deg)`;
+
+  // Fade pizza when near footer
+  const docH=document.documentElement.scrollHeight;
+  const winH=window.innerHeight;
+  const nearBottom=scrollY+winH>docH-200;
+  stage.style.opacity=nearBottom?'0':'1';
+
+  requestAnimationFrame(updatePizza);
+}
+updatePizza();
+
+/* ── SCROLL REVEAL ── */
+const reveals=document.querySelectorAll('.reveal');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');}});
+},{threshold:.18});
+reveals.forEach(r=>obs.observe(r));
+</script>
+</body>
+</html>
